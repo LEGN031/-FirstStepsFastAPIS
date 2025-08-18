@@ -33,4 +33,3 @@ def home(id: int):
             return movies
     return {"Error": "Not Found"}
     
-#hola
