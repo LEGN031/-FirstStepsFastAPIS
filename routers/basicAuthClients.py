@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import hashlib
 from auth.jwtHandler import create_access_token, verify_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
 
-app = FastAPI()
+router = APIRouter()
 oauth2 = OAuth2PasswordBearer(tokenUrl="login")
 
 class Client(BaseModel):
@@ -65,7 +65,7 @@ async def current_user(token: str = Depends(oauth2)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return user
 
-@app.post("/login")
+@router.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user_db = users_db.get(form_data.username)
     if not user_db:
@@ -79,6 +79,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.get('/users/me')
+@router.get('/users/me')
 async def me(user: Client = Depends(current_user)):
     return Client(**user.model_dump())
