@@ -1,19 +1,20 @@
 from pydantic import BaseModel
 from typing import Optional
 class Movie(BaseModel):
-    idMovie: Optional[int] = None 
-    title: str
-    year: str
-    category: str
-
-class MovieUpdate(BaseModel):
+    idMovie: Optional[str] = None 
     title: str
     year: str
     category: str
 
 class Client(BaseModel):
-    idCLient: Optional[int] = None
+    clientID : Optional[str] = None
+    username: str
     name: str
+    email: str
+    disabled: bool = False
+
+class ClientInDB(Client):
+    password: str
 
 
 class Compra(BaseModel):

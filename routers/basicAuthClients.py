@@ -4,18 +4,16 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import hashlib
 from auth.jwtHandler import create_access_token, verify_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
+from Models.models import Client, ClientInDB
+from db.clientDB import db_client
+from db.schemas import client as schema
+from bson.objectid import ObjectId 
 
 router = APIRouter()
 oauth2 = OAuth2PasswordBearer(tokenUrl="login")
 
-class Client(BaseModel):
-    username: str
-    name: str
-    email: str
-    disabled: bool
-
-class ClientInDB(Client):
-    password: str
+db = db_client["sample_mflix"]        
+users_collection = db["users"] 
 
 def get_password_hash(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
@@ -23,7 +21,7 @@ def get_password_hash(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return get_password_hash(plain_password) == hashed_password
 
-users_db = {
+'''sers_db = {
     "johndoe": {
         "username": "johndoe",
         "name": "John Doe",
@@ -38,12 +36,23 @@ users_db = {
         "disabled": True,
         "password": get_password_hash("abcdef")
     }
-}
+}'''
+
+
+def get_user():
+    user = users_collection.find()
+    if not user:
+        raise HTTPException(status_code=404, detail='Not Found')
+    user = list(map(schema.clientDB_schema, user))
+    return user
+
 
 def get_user(username: str):
-    if username in users_db:
-        user_dict = users_db[username]
-        return ClientInDB(**user_dict)
+    user = users_collection.find_one({"username": username})
+    if not user:
+        raise HTTPException(status_code=404, detail='Not Found')
+    user = schema.clientDB_schema(user)
+    return ClientInDB(**user)
     
 '''
 def verify_user(user: ClientInDB, form_data: OAuth2PasswordRequestForm):
@@ -67,7 +76,7 @@ async def current_user(token: str = Depends(oauth2)):
 
 @router.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user_db = users_db.get(form_data.username)
+    user_db = users_collection.find_one({"username": form_data.username})
     if not user_db:
         raise HTTPException(status_code=404, detail='Not Found')
     user = get_user(form_data.username)
